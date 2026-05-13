@@ -71,6 +71,9 @@
             max-width: calc(100vw - 1rem);
             overflow: visible;
         }
+        .mobile-word-break {
+            display: none;
+        }
 
         .balloon-letter {
             position: relative;
@@ -321,7 +324,14 @@
                 gap: 0.6rem;
             }
             .balloon-title {
+                flex-wrap: wrap;
                 gap: 1px;
+                row-gap: 0.25rem;
+            }
+            .mobile-word-break {
+                display: block;
+                flex-basis: 100%;
+                height: 0;
             }
             .balloon-shape {
                 width: clamp(17px, 6.8vw, 24px);
@@ -417,8 +427,12 @@
         }
         .deco-balloon {
             position: absolute;
-            animation: riseBalloon linear infinite;
+            animation: riseBalloon linear forwards;
             opacity: 0.8;
+        }
+        .deco-balloon.popping {
+            animation: decoPop 0.45s ease-out forwards !important;
+            pointer-events: none;
         }
         @keyframes riseBalloon {
             0% {
@@ -432,7 +446,21 @@
                 opacity: 0.7;
             }
             100% {
-                transform: translateY(-30vh) rotate(20deg) scale(1.1);
+                transform: translateY(-18vh) rotate(20deg) scale(1.1);
+                opacity: 0.75;
+            }
+        }
+        @keyframes decoPop {
+            0% {
+                transform: translateY(-18vh) rotate(20deg) scale(1.1);
+                opacity: 0.75;
+            }
+            55% {
+                transform: translateY(-18vh) rotate(20deg) scale(1.65);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-18vh) rotate(20deg) scale(2.1);
                 opacity: 0;
             }
         }
@@ -472,7 +500,7 @@
 
     <!-- Contenedor principal -->
     <div class="main-container">
-        <!-- Texto PRÓXIMAMENTE con globos -->
+        <!-- Texto MUY PRONTO con globos -->
         <div class="balloon-title" id="balloonTitle">
             <!-- Letras generadas por JS -->
         </div>
@@ -499,7 +527,8 @@
                 cream: '#FFFDEE'
             };
 
-            const text = 'PRÓXIMAMENTE';
+            const text = 'MUYPRONTO';
+            const mobileBreakAfter = 2;
             const colorClasses = [
                 'color-pink',
                 'color-pink-strong',
@@ -519,6 +548,13 @@
             const balloonTitle = document.getElementById('balloonTitle');
             // Guardamos los datos de cada letra para poder recrearla
             const lettersData = [];
+
+            function insertMobileBreak() {
+                const breakDiv = document.createElement('div');
+                breakDiv.className = 'mobile-word-break';
+                breakDiv.setAttribute('aria-hidden', 'true');
+                balloonTitle.appendChild(breakDiv);
+            }
 
             // ============ FUNCIÓN PARA CREAR UNA LETRA-GLOBO ============
             function createBalloonLetter(char, colorClass, index) {
@@ -556,6 +592,9 @@
                 const letterElement = createBalloonLetter(char, colorClass, index);
                 balloonTitle.appendChild(letterElement);
                 lettersData.push({ char, colorClass });
+                if (index === mobileBreakAfter) {
+                    insertMobileBreak();
+                }
             });
 
             // ============ FUNCIÓN PARA REVENTAR GLOBO ============
@@ -604,13 +643,11 @@
                 const data = lettersData[index];
                 const newLetter = createBalloonLetter(data.char, data.colorClass, index);
 
-                // Insertar en la posición correcta dentro del contenedor
-                const children = balloonTitle.children;
-                if (index >= children.length) {
-                    balloonTitle.appendChild(newLetter);
-                } else {
-                    balloonTitle.insertBefore(newLetter, children[index]);
-                }
+                const nextLetter = Array.from(balloonTitle.children).find(child => {
+                    const childIndex = Number(child.getAttribute('data-index'));
+                    return Number.isFinite(childIndex) && childIndex > index;
+                });
+                balloonTitle.insertBefore(newLetter, nextLetter || null);
 
                 // Animación de entrada
                 newLetter.classList.add('pop-in');
@@ -710,8 +747,10 @@
 
                 const color = Object.values(colors)[Math.floor(Math.random() * 5)];
                 balloon.style.left = Math.random() * 90 + '%';
-                balloon.style.animationDuration = (Math.random() * 10 + 12) + 's';
-                balloon.style.animationDelay = Math.random() * 8 + 's';
+                const riseDuration = Math.random() * 10 + 12;
+                const riseDelay = Math.random() * 8;
+                balloon.style.animationDuration = riseDuration + 's';
+                balloon.style.animationDelay = riseDelay + 's';
                 balloon.innerHTML = `
                     <ellipse cx="30" cy="35" rx="26" ry="32" fill="${color}" stroke="rgba(0,0,0,0.05)" stroke-width="1"/>
                     <ellipse cx="22" cy="22" rx="8" ry="16" fill="rgba(255,255,255,0.4)" transform="rotate(-15 22 22)"/>
@@ -720,9 +759,36 @@
                 `;
                 decoContainer.appendChild(balloon);
 
+                const popDelay = Math.random() * 4000 + 1000;
+                setTimeout(() => {
+                    popDecoBalloon(balloon);
+                }, (riseDuration + riseDelay) * 1000 + popDelay);
+            }
+
+            function popDecoBalloon(balloon) {
+                if (!balloon.parentNode || balloon.classList.contains('popping')) return;
+                balloon.classList.add('popping');
+
+                const rect = balloon.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                for (let i = 0; i < 18; i++) {
+                    const p = new ConfettiParticle();
+                    p.x = centerX;
+                    p.y = centerY;
+                    p.speed = (Math.random() - 0.5) * 8;
+                    p.size = Math.random() * 7 + 3;
+                    p.color = Object.values(colors)[Math.floor(Math.random() * 5)];
+                    particles.push(p);
+                    setTimeout(() => {
+                        const idx = particles.indexOf(p);
+                        if (idx > -1) particles.splice(idx, 1);
+                    }, 1800);
+                }
+
                 setTimeout(() => {
                     if (balloon.parentNode) balloon.remove();
-                }, (parseFloat(balloon.style.animationDuration) + parseFloat(balloon.style.animationDelay)) * 1000);
+                }, 450);
             }
 
             setInterval(createDecoBalloon, 1800);
