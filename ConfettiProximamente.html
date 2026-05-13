@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Próximamente | Confetti Party Planner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Comfortaa:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-pink: #F29DB5;
+            --c-pink-strong: #F55787;
+            --c-pink-dark: #C2185B;
+            --c-mint: #79C6C0;
+            --c-yellow: #F3CD8A;
+            --c-cream: #FFFDEE;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--c-cream);
+            font-family: 'Comfortaa', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            cursor: default;
+        }
+
+        /* Confeti cayendo */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Contenedor principal */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3rem;
+            padding: 2rem;
+        }
+
+        /* Título con globos */
+        .balloon-title {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem;
+            perspective: 800px;
+        }
+
+        .balloon-letter {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: floatLetter 3s ease-in-out infinite;
+            filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.12));
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .balloon-letter:nth-child(odd) {
+            animation-delay: 0.4s;
+            animation-duration: 3.2s;
+        }
+        .balloon-letter:nth-child(3n) {
+            animation-delay: 0.8s;
+            animation-duration: 2.8s;
+        }
+        .balloon-letter:nth-child(5n) {
+            animation-delay: 1.2s;
+            animation-duration: 3.4s;
+        }
+        .balloon-letter:nth-child(7n) {
+            animation-delay: 0.2s;
+            animation-duration: 2.6s;
+        }
+
+        @keyframes floatLetter {
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-22px) rotate(2deg);
+            }
+            50% {
+                transform: translateY(-8px) rotate(-1deg);
+            }
+            75% {
+                transform: translateY(-28px) rotate(1.5deg);
+            }
+        }
+
+        /* Clase para animación de reventar */
+        .pop-out {
+            animation: popBurst 0.4s ease-out forwards !important;
+            pointer-events: none;
+        }
+        @keyframes popBurst {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.8);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(2.5);
+                opacity: 0;
+            }
+        }
+
+        /* Clase para aparecer de nuevo */
+        .pop-in {
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .balloon-shape {
+            width: 80px;
+            height: 100px;
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Baloo 2', cursive;
+            font-weight: 800;
+            font-size: 3.2rem;
+            color: white;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+            position: relative;
+            box-shadow: inset -8px -8px 16px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .balloon-shape:hover {
+            transform: scale(1.15);
+            box-shadow: inset -8px -8px 16px rgba(0, 0, 0, 0.15), 0 16px 32px rgba(0, 0, 0, 0.2);
+            z-index: 20;
+        }
+
+        .balloon-shape::after {
+            content: "";
+            position: absolute;
+            top: 12%;
+            left: 18%;
+            width: 18px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.45);
+            transform: rotate(-20deg);
+            pointer-events: none;
+        }
+
+        /* Colores de globos */
+        .color-pink {
+            background: var(--c-pink);
+            background: radial-gradient(circle at 30% 25%, #f9c2d3, var(--c-pink) 70%);
+        }
+        .color-pink-strong {
+            background: var(--c-pink-strong);
+            background: radial-gradient(circle at 30% 25%, #f98bb0, var(--c-pink-strong) 70%);
+        }
+        .color-mint {
+            background: var(--c-mint);
+            background: radial-gradient(circle at 30% 25%, #a7ddd9, var(--c-mint) 70%);
+        }
+        .color-yellow {
+            background: var(--c-yellow);
+            background: radial-gradient(circle at 30% 25%, #f7ddb8, var(--c-yellow) 70%);
+        }
+        .color-pink-dark {
+            background: var(--c-pink-dark);
+            background: radial-gradient(circle at 30% 25%, #e04b79, var(--c-pink-dark) 70%);
+        }
+
+        .balloon-knot {
+            width: 14px;
+            height: 12px;
+            background-color: inherit;
+            clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+            margin-top: -2px;
+            opacity: 0.9;
+        }
+        .balloon-thread {
+            width: 2px;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.02));
+            margin-top: 2px;
+            transform-origin: top center;
+            animation: swayThread 2.5s ease-in-out infinite;
+        }
+        @keyframes swayThread {
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+            50% {
+                transform: rotate(5deg);
+            }
+        }
+
+        /* Responsive globos */
+        @media (max-width: 768px) {
+            .balloon-title {
+                gap: 0.4rem;
+            }
+            .balloon-shape {
+                width: 55px;
+                height: 70px;
+                font-size: 2rem;
+            }
+            .balloon-shape::after {
+                width: 12px;
+                height: 26px;
+                top: 10%;
+                left: 16%;
+            }
+            .balloon-knot {
+                width: 10px;
+                height: 8px;
+            }
+            .balloon-thread {
+                height: 40px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .balloon-title {
+                gap: 0.25rem;
+            }
+            .balloon-shape {
+                width: 42px;
+                height: 54px;
+                font-size: 1.5rem;
+            }
+            .balloon-thread {
+                height: 28px;
+            }
+        }
+
+        /* Logo confetti debajo */
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: logoEntrance 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+        @keyframes logoEntrance {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .logo-text {
+            display: flex;
+            align-items: flex-end;
+            font-family: 'Baloo 2', cursive;
+            font-weight: 800;
+            font-size: 4rem;
+            letter-spacing: -1px;
+            line-height: 1;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .logo-text:hover {
+            transform: scale(1.08);
+        }
+        .logo-text .c1 {
+            color: var(--c-pink);
+        }
+        .logo-text .c2 {
+            color: var(--c-yellow);
+        }
+        .logo-text .c3 {
+            color: var(--c-mint);
+        }
+        .logo-sub {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            font-weight: 800;
+            color: #2A2A2A;
+            margin-top: 0.2rem;
+        }
+        .logo-image {
+            width: 280px;
+            height: auto;
+            display: block;
+        }
+        @media (max-width: 768px) {
+            .logo-image {
+                width: 200px;
+            }
+        }
+        @media (max-width: 480px) {
+            .logo-image {
+                width: 150px;
+            }
+        }
+
+        /* Globos flotantes decorativos (SVG) */
+        .decorative-balloons {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .deco-balloon {
+            position: absolute;
+            animation: riseBalloon linear infinite;
+            opacity: 0.8;
+        }
+        @keyframes riseBalloon {
+            0% {
+                transform: translateY(110vh) rotate(0deg) scale(0.7);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-30vh) rotate(20deg) scale(1.1);
+                opacity: 0;
+            }
+        }
+
+        /* Destello sutil */
+        @keyframes sparkle {
+            0%,
+            100% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+        .sparkle-dot {
+            position: fixed;
+            pointer-events: none;
+            z-index: 6;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 12px 4px rgba(255, 255, 200, 0.9);
+            animation: sparkle 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Lienzo para confeti -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Destellos aleatorios -->
+    <div id="sparkles-container"></div>
+
+    <!-- Contenedor principal -->
+    <div class="main-container">
+        <!-- Texto PRÓXIMAMENTE con globos -->
+        <div class="balloon-title" id="balloonTitle">
+            <!-- Letras generadas por JS -->
+        </div>
+
+        <!-- AQUI CAMBIAS EL LOGO inicio -->
+        <div class="logo-container">
+            <img src="Logo.png" alt="Confetti Party Planner" class="logo-image">
+        </div>
+        <!-- AQUI CAMBIAS EL LOGO fin -->
+    </div>
+
+    <!-- Globos flotantes decorativos -->
+    <div class="decorative-balloons" id="decorativeBalloons"></div>
+
+    <script>
+        (function() {
+            // ============ CONFIGURACIÓN ============
+            const colors = {
+                pink: '#F29DB5',
+                pinkStrong: '#F55787',
+                mint: '#79C6C0',
+                yellow: '#F3CD8A',
+                pinkDark: '#C2185B',
+                cream: '#FFFDEE'
+            };
+
+            const text = 'PRÓXIMAMENTE';
+            const colorClasses = [
+                'color-pink',
+                'color-pink-strong',
+                'color-mint',
+                'color-yellow',
+                'color-pink-dark',
+                'color-pink',
+                'color-mint',
+                'color-yellow',
+                'color-pink-strong',
+                'color-pink-dark',
+                'color-mint',
+                'color-pink'
+            ];
+
+            // Referencia al contenedor de globos
+            const balloonTitle = document.getElementById('balloonTitle');
+            // Guardamos los datos de cada letra para poder recrearla
+            const lettersData = [];
+
+            // ============ FUNCIÓN PARA CREAR UNA LETRA-GLOBO ============
+            function createBalloonLetter(char, colorClass, index) {
+                const letterDiv = document.createElement('div');
+                letterDiv.className = 'balloon-letter';
+                letterDiv.style.animationDelay = (Math.random() * 1.5).toFixed(2) + 's';
+                letterDiv.setAttribute('data-index', index);
+
+                const shapeDiv = document.createElement('div');
+                shapeDiv.className = `balloon-shape ${colorClass}`;
+                shapeDiv.textContent = char;
+
+                const knotDiv = document.createElement('div');
+                knotDiv.className = 'balloon-knot';
+                knotDiv.style.backgroundColor = 'inherit';
+
+                const threadDiv = document.createElement('div');
+                threadDiv.className = 'balloon-thread';
+
+                letterDiv.appendChild(shapeDiv);
+                letterDiv.appendChild(knotDiv);
+                letterDiv.appendChild(threadDiv);
+
+                // Evento de clic para reventar
+                shapeDiv.addEventListener('click', function(e) {
+                    popBalloon(letterDiv, index, e);
+                });
+
+                return letterDiv;
+            }
+
+            // ============ GENERAR GLOBOS INICIALES ============
+            text.split('').forEach((char, index) => {
+                const colorClass = colorClasses[index % colorClasses.length];
+                const letterElement = createBalloonLetter(char, colorClass, index);
+                balloonTitle.appendChild(letterElement);
+                lettersData.push({ char, colorClass });
+            });
+
+            // ============ FUNCIÓN PARA REVENTAR GLOBO ============
+            function popBalloon(letterDiv, index, event) {
+                // Evitar doble clic mientras se está reventando
+                if (letterDiv.classList.contains('pop-out') || letterDiv.classList.contains('popping')) return;
+                letterDiv.classList.add('popping');
+
+                // Añadir clase de animación de explosión
+                letterDiv.classList.add('pop-out');
+
+                // Disparar muchas partículas de confeti desde la posición del clic
+                const rect = letterDiv.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                for (let i = 0; i < 25; i++) {
+                    const p = new ConfettiParticle();
+                    p.x = centerX;
+                    p.y = centerY;
+                    p.speed = (Math.random() - 0.5) * 10;
+                    p.size = Math.random() * 8 + 4;
+                    p.color = Object.values(colors)[Math.floor(Math.random() * 5)];
+                    particles.push(p);
+                    setTimeout(() => {
+                        const idx = particles.indexOf(p);
+                        if (idx > -1) particles.splice(idx, 1);
+                    }, 2000);
+                }
+
+                // Después de la animación, eliminar el elemento del DOM
+                setTimeout(() => {
+                    if (letterDiv.parentNode) {
+                        letterDiv.remove();
+                    }
+                }, 400); // Duración de la animación pop-out
+
+                // Programar reaparición a los 30 segundos
+                setTimeout(() => {
+                    recreateBalloon(index);
+                }, 30000);
+            }
+
+            // ============ FUNCIÓN PARA RECREAR GLOBO ============
+            function recreateBalloon(index) {
+                if (index < 0 || index >= lettersData.length) return;
+                const data = lettersData[index];
+                const newLetter = createBalloonLetter(data.char, data.colorClass, index);
+
+                // Insertar en la posición correcta dentro del contenedor
+                const children = balloonTitle.children;
+                if (index >= children.length) {
+                    balloonTitle.appendChild(newLetter);
+                } else {
+                    balloonTitle.insertBefore(newLetter, children[index]);
+                }
+
+                // Animación de entrada
+                newLetter.classList.add('pop-in');
+                setTimeout(() => {
+                    newLetter.classList.remove('pop-in');
+                }, 600);
+            }
+
+            // ============ CONFETI CANVAS (sin cambios) ============
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function resizeCanvas() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            const confettiColors = [
+                colors.pink,
+                colors.pinkStrong,
+                colors.mint,
+                colors.yellow,
+                colors.pinkDark,
+                '#FFFFFF',
+                '#FFD1DC'
+            ];
+
+            class ConfettiParticle {
+                constructor() {
+                    this.reset();
+                    this.y = Math.random() * height;
+                }
+                reset() {
+                    this.x = Math.random() * width;
+                    this.y = -20;
+                    this.size = Math.random() * 10 + 5;
+                    this.color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                    this.speed = Math.random() * 3 + 2;
+                    this.rotation = Math.random() * 360;
+                    this.rotSpeed = (Math.random() - 0.5) * 4;
+                    this.wobble = Math.random() * 2;
+                    this.shape = Math.random() > 0.5 ? 'rect' : 'circle';
+                    this.opacity = Math.random() * 0.6 + 0.4;
+                }
+                update() {
+                    this.y += this.speed;
+                    this.rotation += this.rotSpeed;
+                    this.x += Math.sin(this.y * 0.02) * this.wobble;
+                    if (this.y > height + 20) {
+                        this.reset();
+                    }
+                }
+                draw() {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate((this.rotation * Math.PI) / 180);
+                    ctx.globalAlpha = this.opacity;
+                    ctx.fillStyle = this.color;
+                    if (this.shape === 'rect') {
+                        ctx.fillRect(-this.size / 2, -this.size / 4, this.size, this.size / 2);
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+            }
+
+            for (let i = 0; i < 120; i++) {
+                particles.push(new ConfettiParticle());
+            }
+
+            function animateConfetti() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                requestAnimationFrame(animateConfetti);
+            }
+            animateConfetti();
+
+            // ============ GLOBOS DECORATIVOS FLOTANTES (sin cambios) ============
+            const decoContainer = document.getElementById('decorativeBalloons');
+
+            function createDecoBalloon() {
+                const balloon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                balloon.setAttribute('viewBox', '0 0 60 90');
+                balloon.setAttribute('width', '50');
+                balloon.setAttribute('height', '75');
+                balloon.classList.add('deco-balloon');
+
+                const color = Object.values(colors)[Math.floor(Math.random() * 5)];
+                balloon.style.left = Math.random() * 90 + '%';
+                balloon.style.animationDuration = (Math.random() * 10 + 12) + 's';
+                balloon.style.animationDelay = Math.random() * 8 + 's';
+                balloon.innerHTML = `
+                    <ellipse cx="30" cy="35" rx="26" ry="32" fill="${color}" stroke="rgba(0,0,0,0.05)" stroke-width="1"/>
+                    <ellipse cx="22" cy="22" rx="8" ry="16" fill="rgba(255,255,255,0.4)" transform="rotate(-15 22 22)"/>
+                    <polygon points="27,66 33,66 35,72 25,72" fill="${color}" opacity="0.9"/>
+                    <path d="M30 72 Q32 80 30 88" stroke="rgba(0,0,0,0.15)" stroke-width="1.5" fill="none"/>
+                `;
+                decoContainer.appendChild(balloon);
+
+                setTimeout(() => {
+                    if (balloon.parentNode) balloon.remove();
+                }, (parseFloat(balloon.style.animationDuration) + parseFloat(balloon.style.animationDelay)) * 1000);
+            }
+
+            setInterval(createDecoBalloon, 1800);
+            for (let i = 0; i < 6; i++) {
+                setTimeout(createDecoBalloon, i * 400);
+            }
+
+            // ============ DESTELLOS ALEATORIOS (sin cambios) ============
+            const sparklesContainer = document.getElementById('sparkles-container');
+
+            function createSparkle() {
+                const dot = document.createElement('div');
+                dot.className = 'sparkle-dot';
+                dot.style.left = Math.random() * 95 + '%';
+                dot.style.top = Math.random() * 90 + '%';
+                dot.style.animationDelay = Math.random() * 3 + 's';
+                dot.style.width = (Math.random() * 6 + 4) + 'px';
+                dot.style.height = dot.style.width;
+                sparklesContainer.appendChild(dot);
+                setTimeout(() => {
+                    if (dot.parentNode) dot.remove();
+                }, 4000);
+            }
+            setInterval(createSparkle, 700);
+            for (let i = 0; i < 10; i++) {
+                setTimeout(createSparkle, i * 300);
+            }
+        })();
+    </script>
+</body>
+</html>
