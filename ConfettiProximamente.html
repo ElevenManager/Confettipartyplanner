@@ -660,11 +660,18 @@
                 const data = lettersData[index];
                 const newLetter = createBalloonLetter(data.char, data.colorClass, index);
 
-                const nextLetter = Array.from(balloonTitle.children).find(child => {
+                const children = Array.from(balloonTitle.children);
+                const wordSpacer = balloonTitle.querySelector('.word-spacer');
+                const nextLetter = children.find(child => {
                     const childIndex = Number(child.getAttribute('data-index'));
-                    return Number.isFinite(childIndex) && childIndex > index;
+                    if (!Number.isFinite(childIndex) || childIndex <= index) return false;
+                    if (index <= mobileBreakAfter) {
+                        return childIndex <= mobileBreakAfter;
+                    }
+                    return childIndex > mobileBreakAfter;
                 });
-                balloonTitle.insertBefore(newLetter, nextLetter || null);
+                const insertTarget = nextLetter || (index <= mobileBreakAfter ? wordSpacer : null);
+                balloonTitle.insertBefore(newLetter, insertTarget);
 
                 // Animación de entrada
                 newLetter.classList.add('pop-in');
